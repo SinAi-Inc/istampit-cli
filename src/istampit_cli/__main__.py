@@ -97,10 +97,37 @@ def cmd_verify(receipt: str, json_out: bool):
         else:
             print(out)
     except (RuntimeError, OSError, ValueError) as e:
+        # Treat incomplete / pending timestamps as a non-fatal pending status.
+        msg = str(e)
+        lower = msg.lower()
+        if "not complete" in lower or "pending" in lower:
+            status = "pending"
+            bitcoin = None
+            calendars: list[str] = []
+            try:
+                info_cp = run_ots("info", receipt)
+                lines = info_cp.stdout.splitlines()
+                calendars = [
+                    ln.split(maxsplit=1)[1]
+                    for ln in lines
+                    if ln.lower().startswith("calendar ")
+                ]
+            except (RuntimeError, OSError, ValueError):
+                pass
+            if json_out:
+                print(json.dumps({
+                    "status": status,
+                    "bitcoin": bitcoin,
+                    "calendars": calendars,
+                    "detail": msg
+                }, indent=2))
+            else:
+                print(msg)
+            return
         if json_out:
-            print(json.dumps({"status": "error", "error": str(e)}))
+            print(json.dumps({"status": "error", "error": msg}))
         else:
-            print(f"error: {e}", file=sys.stderr)
+            print(f"error: {msg}", file=sys.stderr)
         sys.exit(EXIT_ERR)
 
 def cmd_upgrade(receipt: str, json_out: bool):
