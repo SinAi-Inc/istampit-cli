@@ -220,25 +220,31 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("stamp", help="Stamp file(s) and create .ots receipts")
     sp.add_argument("paths", nargs="+", help="File paths to stamp")
+    sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     sp = sub.add_parser("verify", help="Verify a .ots receipt")
     sp.add_argument("receipt", help="Receipt file (.ots)")
+    sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     sp = sub.add_parser("upgrade", help="Upgrade a .ots receipt (fetch attestations)")
     sp.add_argument("receipt", help="Receipt file (.ots)")
+    sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     sp = sub.add_parser("info", help="Show receipt operations/attestations")
     sp.add_argument("receipt", help="Receipt file (.ots)")
+    sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     sp = sub.add_parser(
         "upgrade-all", help="Upgrade all .ots receipts under a directory (recursive)"
     )
     sp.add_argument("root", help="Directory to scan (or a single .ots file)")
+    sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     return p
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    # json_out may be provided either globally or per-subcommand; already unified in args.json_out
     if args.cmd == "stamp":
         cmd_stamp(args.paths, args.json_out)
         return EXIT_OK
