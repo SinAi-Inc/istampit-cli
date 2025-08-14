@@ -1,5 +1,12 @@
 from __future__ import annotations
-import argparse, subprocess, sys, json, shutil, os, hashlib, re
+
+import argparse
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 EXIT_OK = 0
@@ -25,10 +32,13 @@ def run_ots(*args: str) -> subprocess.CompletedProcess:
     try:
         return subprocess.run([*base_cmd, *args], check=True, capture_output=True, text=True)
     except (FileNotFoundError, ModuleNotFoundError):
-        print("error: OpenTimestamps client not available; install opentimestamps-client", file=sys.stderr)
+        print(
+            "error: OpenTimestamps client not available; install opentimestamps-client",
+            file=sys.stderr,
+        )
         sys.exit(EXIT_ERR)
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(e.stderr.strip() or e.stdout.strip() or str(e))
+        raise RuntimeError(e.stderr.strip() or e.stdout.strip() or str(e)) from e
 
 def cmd_stamp(paths: list[str], json_out: bool):
     receipts = []
@@ -40,7 +50,7 @@ def cmd_stamp(paths: list[str], json_out: bool):
         try:
             run_ots("stamp", str(path))
             receipts.append(str(path) + ".ots")
-        except Exception as e:  # noqa: BLE001
+        except (RuntimeError, OSError, ValueError) as e:
             print(f"error stamping {p}: {e}", file=sys.stderr)
     if json_out:
         print(json.dumps({"receipts": receipts}, indent=2))
@@ -51,8 +61,11 @@ def _parse_bitcoin_attestation(text: str):
     if not m:
         return None
     height = int(m.group(1))
-    # Try to parse a unix timestamp in same or following line (common formats vary; we just search for 10-digit epoch)
-    tm = re.search(r'(?:^|\D)(1[6-9]\d{8}|2\d{9})(?:\D|$)', text)  # 10-digit timestamp 1600000000+
+    # Try to parse a unix timestamp (10-digit epoch >=1600000000) in same or following line
+    tm = re.search(
+        r'(?:^|\D)(1[6-9]\d{8}|2\d{9})(?:\D|$)',
+        text,
+    )  # 10-digit timestamp 1600000000+
     block_time = int(tm.group(1)) if tm else None
     return {"blockHeight": height, "blockTime": block_time}
 
@@ -67,8 +80,12 @@ def cmd_verify(receipt: str, json_out: bool):
             try:
                 info_cp = run_ots("info", receipt)
                 lines = info_cp.stdout.splitlines()
-                calendars = [ln.split(maxsplit=1)[1] for ln in lines if ln.lower().startswith("calendar ")]
-            except Exception:  # noqa: BLE001
+                calendars = [
+                    ln.split(maxsplit=1)[1]
+                    for ln in lines
+                    if ln.lower().startswith("calendar ")
+                ]
+            except (RuntimeError, OSError, ValueError):
                 pass
         if json_out:
             print(json.dumps({
@@ -79,7 +96,7 @@ def cmd_verify(receipt: str, json_out: bool):
             }, indent=2))
         else:
             print(out)
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, OSError, ValueError) as e:
         if json_out:
             print(json.dumps({"status": "error", "error": str(e)}))
         else:
@@ -96,14 +113,24 @@ def cmd_upgrade(receipt: str, json_out: bool):
             v_out = v_cp.stdout.strip()
             bitcoin = _parse_bitcoin_attestation(v_out)
             status = "confirmed" if bitcoin else "pending"
-        except Exception:  # noqa: BLE001
+        except (RuntimeError, OSError, ValueError):
             bitcoin = None
             status = "unknown"
         if json_out:
-            print(json.dumps({"upgraded": True, "status": status, "bitcoin": bitcoin, "detail": out}, indent=2))
+            print(
+                json.dumps(
+                    {
+                        "upgraded": True,
+                        "status": status,
+                        "bitcoin": bitcoin,
+                        "detail": out,
+                    },
+                    indent=2,
+                )
+            )
         else:
             print(out)
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, OSError, ValueError) as e:
         if json_out:
             print(json.dumps({"upgraded": False, "error": str(e)}))
         else:
@@ -125,7 +152,7 @@ def cmd_upgrade_all(root: str, json_out: bool):
             bitcoin = _parse_bitcoin_attestation(v_out)
             status = "confirmed" if bitcoin else "pending"
             results.append({"receipt": str(r), "status": status, "bitcoin": bitcoin})
-        except Exception as e:  # noqa: BLE001
+        except (RuntimeError, OSError, ValueError) as e:
             results.append({"receipt": str(r), "status": "error", "error": str(e)})
     if json_out:
         print(json.dumps({"results": results}, indent=2))
@@ -144,11 +171,15 @@ def cmd_info(receipt: str, json_out: bool):
         out = cp.stdout.strip()
         if json_out:
             lines = out.splitlines()
-            calendars = [ln.split(maxsplit=1)[1] for ln in lines if ln.lower().startswith("calendar ")]
+            calendars = [
+                ln.split(maxsplit=1)[1]
+                for ln in lines
+                if ln.lower().startswith("calendar ")
+            ]
             print(json.dumps({"raw": out, "calendars": calendars}, indent=2))
         else:
             print(out)
-    except Exception as e:  # noqa: BLE001
+    except (RuntimeError, OSError, ValueError) as e:
         if json_out:
             print(json.dumps({"error": str(e)}))
         else:
@@ -172,7 +203,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("info", help="Show receipt operations/attestations")
     sp.add_argument("receipt", help="Receipt file (.ots)")
 
-    sp = sub.add_parser("upgrade-all", help="Upgrade all .ots receipts under a directory (recursive)")
+    sp = sub.add_parser(
+        "upgrade-all", help="Upgrade all .ots receipts under a directory (recursive)"
+    )
     sp.add_argument("root", help="Directory to scan (or a single .ots file)")
 
     return p

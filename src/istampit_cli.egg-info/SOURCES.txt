@@ -10,3 +10,4 @@ src/istampit_cli.egg-info/entry_points.txt
 src/istampit_cli.egg-info/requires.txt
 src/istampit_cli.egg-info/top_level.txt
 tests/test_parser.py
+tests/test_verify_golden.py
