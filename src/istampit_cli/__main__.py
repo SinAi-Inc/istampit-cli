@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.metadata
 import hashlib
 import json
 import re
@@ -214,8 +215,16 @@ def cmd_info(receipt: str, json_out: bool):
         sys.exit(EXIT_ERR)
 
 def build_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="istampit", description="iStampit CLI (OpenTimestamps helper)")
+    p = argparse.ArgumentParser(
+        prog="istampit",
+        description="iStampit CLI – Proof-of-Existence with OpenTimestamps",
+    )
     p.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
+    p.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {importlib.metadata.version('istampit-cli')}",
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sp = sub.add_parser("stamp", help="Stamp file(s) and create .ots receipts")

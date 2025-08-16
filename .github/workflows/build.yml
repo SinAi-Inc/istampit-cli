@@ -1,0 +1,33 @@
+name: Build (PR validation)
+
+on:
+  pull_request:
+    paths:
+      - '**/*.py'
+      - 'pyproject.toml'
+      - '.github/workflows/build.yml'
+      - 'README.md'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.6
+      - name: Setup Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
+        with:
+          python-version: '3.x'
+      - name: Install build backend
+        run: pip install --upgrade pip build ruff
+      - name: Lint
+        run: ruff check src
+      - name: Format Check
+        run: ruff format --check src
+      - name: Build distributions
+        run: python -m build
+      - name: Inspect wheel metadata
+        run: python -m zipfile -l dist/*.whl | head -n 20

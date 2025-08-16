@@ -12,8 +12,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.6
+      - name: Setup Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d # v5.1.0
         with:
           python-version: '3.x'
 
@@ -24,13 +26,21 @@ jobs:
         run: python -m build
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v4.3.3
         with:
           name: dist-artifacts
           path: dist/*
 
+      - name: SHA256 sums
+        run: |
+          echo "SHA256 sums:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          for f in dist/*; do sha256sum "$f" >> $GITHUB_STEP_SUMMARY; done
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@ec4db0b6fc319f6263058db32d544f6817d918b0 # release/v1 pin
         with:
           print-hash: true
           skip-existing: true
+

@@ -1,32 +1,76 @@
-# iStampit CLI — Proof-of-Existence helper (OpenTimestamps)
+# iStampit CLI — Blockchain Timestamp Verification (OpenTimestamps)
 
-![CodeQL](https://github.com/<org>/<repo>/actions/workflows/codeql.yml/badge.svg)
-![Scorecard](https://github.com/<org>/<repo>/actions/workflows/scorecard.yml/badge.svg)
+[![PyPI version](https://img.shields.io/pypi/v/istampit-cli.svg)](https://pypi.org/project/istampit-cli/)
+[![Python versions](https://img.shields.io/pypi/pyversions/istampit-cli.svg)](https://pypi.org/project/istampit-cli/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Publish](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml/badge.svg)](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml)
+[![OpenSSF Scorecard](https://img.shields.io/badge/Scorecard-enabled-blue)](https://github.com/ossf/scorecard)
 
-Thin CLI for hashing files, calling the OpenTimestamps client behind the scenes, and managing `.ots` receipts (stamp, verify, upgrade, info).
+Lightweight CLI around the official [OpenTimestamps](https://opentimestamps.org) client to **stamp, verify, upgrade, and inspect** cryptographic timestamp proofs (".ots" receipts) for your files — privacy‑first, Bitcoin‑anchored proof‑of‑existence.
 
-## Install
+---
+
+## ✨ Features
+
+* ✅ Free & open‑source (MIT wrapper, underlying libs LGPL-3.0)
+* ✅ Privacy‑first — only hashes leave your machine
+* ✅ Trustless & permanent — proofs anchor into Bitcoin
+* ✅ Works offline — create receipts without network
+* ✅ `--json` output for automation & CI
+
+---
+
+## 📦 Install
 
 ```bash
-pip install istampit-cli  # (once published) or pipx install istampit-cli
+pip install istampit-cli
+# or for isolated usage:
+pipx install istampit-cli
 ```
 
-## Usage
+---
+
+## 🚀 Usage
 
 ```bash
-istampit stamp path/to/file.pdf          # creates file.pdf.ots
-istampit verify path/to/file.pdf.ots     # verifies (uses cache/calendars)
-istampit upgrade path/to/file.pdf.ots    # fetches attestations, writes upgraded proof
+# Create a timestamp receipt
+istampit stamp path/to/file.pdf          # → creates file.pdf.ots
+
+# Verify a receipt
+istampit verify path/to/file.pdf.ots     # checks proof against Bitcoin
+
+# Upgrade a receipt (fetch newer attestations)
+istampit upgrade path/to/file.pdf.ots    # rewrites upgraded proof
+
+# Inspect a receipt
 istampit info path/to/file.pdf.ots       # shows operations/attestations
 ```
 
-Add `--json` for structured output.
+Add `--json` to any command for machine‑readable output.
 
-## Exit Codes
+---
 
-- 0 success
-- non‑zero failure (error already printed)
+## 🔢 Exit Codes
 
-## License
+* `0` → success
+* non‑zero → failure (error message on stderr)
 
-MIT for wrapper code. OpenTimestamps libs under LGPL-3.0.
+---
+
+## 📚 Resources
+
+* 🌐 Website: <https://iStampit.io>
+* 🧾 Public Ledger: <https://iStampit.io/ledger>
+* 🐙 Source / Issues: <https://github.com/SinAi-Inc/istampit-cli>
+
+---
+
+## 📜 License
+
+* Wrapper code: MIT
+* OpenTimestamps libraries: LGPL-3.0
+
+---
+
+**Provable Innovation, Free for Everyone.**
+Empowering developers, researchers, and creators with simple, reliable, and verifiable timestamp proofs.
