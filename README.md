@@ -1,10 +1,11 @@
 # iStampit CLI — Blockchain Timestamp Verification (OpenTimestamps)
 
-[![PyPI version](https://img.shields.io/pypi/v/istampit-cli.svg)](https://pypi.org/project/istampit-cli/)
-[![Python versions](https://img.shields.io/pypi/pyversions/istampit-cli.svg)](https://pypi.org/project/istampit-cli/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Publish](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml/badge.svg)](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml)
-[![OpenSSF Scorecard](https://img.shields.io/badge/Scorecard-enabled-blue)](https://github.com/ossf/scorecard)
+[![PyPI - Version](https://img.shields.io/pypi/v/istampit-cli?logo=pypi)](https://pypi.org/project/istampit-cli/)
+[![PyPI - Python Versions](https://img.shields.io/pypi/pyversions/istampit-cli)](https://pypi.org/project/istampit-cli/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/istampit-cli?color=blue)](https://pypistats.org/packages/istampit-cli)
+[![License](https://img.shields.io/pypi/l/istampit-cli)](https://opensource.org/licenses/MIT)
+[![Publish Status](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml/badge.svg)](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/SinAi-Inc/istampit-cli?label=openssf%20scorecard&logo=OpenSSF)](https://securityscorecards.dev/viewer/?uri=github.com/SinAi-Inc/istampit-cli)
 
 Lightweight CLI around the official [OpenTimestamps](https://opentimestamps.org) client to **stamp, verify, upgrade, and inspect** cryptographic timestamp proofs (".ots" receipts) for your files — privacy‑first, Bitcoin‑anchored proof‑of‑existence.
 
