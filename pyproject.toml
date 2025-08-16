@@ -18,9 +18,9 @@ dependencies = [
 istampit = "istampit_cli.__main__:main"
 
 [project.urls]
-Homepage = "https://iStampit.io"
-Repository = "https://github.com/SinAi-Inc/istampit-cli"
+Homepage = "https://github.com/SinAi-Inc/istampit-cli"
 Documentation = "https://github.com/SinAi-Inc/istampit-cli#readme"
+Source = "https://github.com/SinAi-Inc/istampit-cli"
 Tracker = "https://github.com/SinAi-Inc/istampit-cli/issues"
 
 [tool.setuptools.packages.find]

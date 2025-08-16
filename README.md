@@ -1,8 +1,8 @@
 # iStampit CLI — Blockchain Timestamp Verification (OpenTimestamps)
 
 <!-- badges: start -->
-[![PyPI version](https://img.shields.io/pypi/v/istampit-cli.svg)](https://pypi.org/project/istampit-cli/)
-[![Python versions](https://img.shields.io/pypi/pyversions/istampit-cli.svg)](https://pypi.org/project/istampit-cli/)
+[![PyPI](https://img.shields.io/pypi/v/istampit-cli)](https://pypi.org/project/istampit-cli/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/istampit-cli)](https://pypi.org/project/istampit-cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Publish to PyPI](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml/badge.svg)](https://github.com/SinAi-Inc/istampit-cli/actions/workflows/publish.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/SinAi-Inc/istampit-cli/badge)](https://securityscorecards.dev/viewer/?uri=github.com/SinAi-Inc/istampit-cli)
