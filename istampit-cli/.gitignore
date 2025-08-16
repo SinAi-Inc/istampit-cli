@@ -1,4 +1,0 @@
-# Build artifacts
-src/istampit_cli.egg-info/
-*.pyc
-__pycache__/
