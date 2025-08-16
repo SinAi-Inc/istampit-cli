@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "istampit-cli"
-version = "0.1.0"
-description = "iStampit CLI wrapper around OpenTimestamps (stamp, verify, upgrade, info)"
-authors = [{name="iStampit"}]
+version = "1.0.1"
+description = "iStampit CLI – Blockchain timestamp verification with OpenTimestamps"
+authors = [ { name = "SinAI Inc.", email = "hello@sinai.inc" } ]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.9"
@@ -18,7 +18,10 @@ dependencies = [
 istampit = "istampit_cli.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/sinai-inc/istampit-cli"
+Homepage = "https://iStampit.io"
+Repository = "https://github.com/SinAi-Inc/istampit-cli"
+Documentation = "https://github.com/SinAi-Inc/istampit-cli#readme"
+Tracker = "https://github.com/SinAi-Inc/istampit-cli/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
