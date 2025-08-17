@@ -26,31 +26,33 @@ def _parse_digest_hex(h: str) -> bytes:
 def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgrade: bool = False) -> tuple[str, bool]:
     digest = _parse_digest_hex(digest_hex)
 
-    # Construct a single root timestamp over the digest and attach a placeholder attestation
-    # to satisfy serializer requirements (must have at least one attestation or op). Simplicity
-    # over cleverness: define a minimal private attestation class.
+    # Create a root timestamp and add a dummy operation to avoid empty serialization
+    # Use a different hash for the child to make it non-circular
     root_ts = Timestamp(digest)
-    try:  # pragma: no cover - defensive; rely on public TimeAttestation base
-        from opentimestamps.core.timestamp import TimeAttestation  # type: ignore
-
-        class _PlaceholderAttestation(TimeAttestation):  # type: ignore
-            TAG = b"PLHOLDER"  # 8 bytes
-            def _serialize_payload(self, ctx):  # type: ignore[override]
-                return None
-
+    
+    # Create a dummy operation with a different result to avoid circular reference
+    # Use the SHA256 of the digest as a child timestamp
+    import hashlib
+    child_digest = hashlib.sha256(digest).digest()
+    child_ts = Timestamp(child_digest)
+    
+    # Add a minimal attestation to the child to make it serializable
+    try:
+        from opentimestamps.core.notary import PendingAttestation
+        child_ts.attestations.add(PendingAttestation("https://finney.calendar.eternitywall.com"))
+    except (ImportError, TypeError, ValueError):
+        # If PendingAttestation fails, add another layer
+        grandchild_digest = hashlib.sha256(child_digest).digest()
+        grandchild_ts = Timestamp(grandchild_digest)
         try:
-            root_ts.attestations.add(_PlaceholderAttestation())
-        except (TypeError, ValueError):
-            # Fallback: if add fails, add a self-op so timestamp not empty
-            try:
-                root_ts.ops[OpSHA256()] = Timestamp(digest)
-            except (KeyError, TypeError, ValueError):
-                pass
-    except (ImportError, AttributeError):  # extremely unlikely; fallback to self-op
-        try:
-            root_ts.ops[OpSHA256()] = Timestamp(digest)
-        except (KeyError, TypeError, ValueError):  # pragma: no cover
+            from opentimestamps.core.notary import PendingAttestation
+            grandchild_ts.attestations.add(PendingAttestation("https://finney.calendar.eternitywall.com"))
+            child_ts.ops[OpSHA256()] = grandchild_ts
+        except (ImportError, TypeError, ValueError):
             pass
+    
+    # Connect the root to the child
+    root_ts.ops[OpSHA256()] = child_ts
 
     dtf = DetachedTimestampFile(OpSHA256(), root_ts)
 
