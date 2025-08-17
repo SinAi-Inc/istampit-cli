@@ -41,8 +41,8 @@ def run_ots(*args: str) -> subprocess.CompletedProcess:
     except subprocess.CalledProcessError as e:
         raise RuntimeError(e.stderr.strip() or e.stdout.strip() or str(e)) from e
 
-def cmd_stamp(paths: list[str], json_out: bool):
-    receipts = []
+def cmd_stamp_paths(paths: list[str], json_out: bool):
+    receipts: list[str] = []
     for p in paths:
         path = Path(p)
         if not path.exists():
@@ -55,6 +55,28 @@ def cmd_stamp(paths: list[str], json_out: bool):
             print(f"error stamping {p}: {e}", file=sys.stderr)
     if json_out:
         print(json.dumps({"receipts": receipts}, indent=2))
+
+
+def cmd_stamp_hash(digest_hex: str, out_path: str | None, json_out: bool, do_upgrade: bool = False):
+    """Stamp a precomputed SHA-256 digest (detached mode).
+
+    Produces a receipt whose commitment matches the provided digest, allowing
+    later verification against the original file whose sha256 equals digest_hex.
+    """
+    from .stamp_hash import stamp_from_hash_hex, HashFormatError  # local import to avoid import cost if unused
+
+    try:
+        receipt_path, upgraded = stamp_from_hash_hex(digest_hex, out_path, do_upgrade)
+    except HashFormatError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(EXIT_ERR)
+    except Exception as e:  # noqa: BLE001
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(EXIT_ERR)
+    if json_out:
+        print(json.dumps({"receipts": [receipt_path], "hash": digest_hex, "upgraded": upgraded}, indent=2))
+    else:
+        print(receipt_path)
 
 def _parse_bitcoin_attestation(text: str):
     # Heuristic: look for 'Bitcoin block <height>' pattern.
@@ -227,8 +249,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    sp = sub.add_parser("stamp", help="Stamp file(s) and create .ots receipts")
-    sp.add_argument("paths", nargs="+", help="File paths to stamp")
+    sp = sub.add_parser("stamp", help="Stamp file(s) OR a precomputed SHA-256 digest to create .ots receipts")
+    # Mutually exclusive: either positional file paths OR --hash
+    sp.add_argument("paths", nargs="*", help="File paths to stamp")
+    mx = sp.add_mutually_exclusive_group()
+    mx.add_argument("--hash", dest="digest_hex", help="SHA-256 hex digest to stamp (detached)")
+    sp.add_argument("--out", dest="out", help="Output .ots path when using --hash (defaults to <hash>.ots)")
+    sp.add_argument("--upgrade", action="store_true", dest="upgrade", help="Attempt immediate upgrade (calendar attestations) after stamping")
     sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     sp = sub.add_parser("verify", help="Verify a .ots receipt")
@@ -255,7 +282,17 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     # json_out may be provided either globally or per-subcommand; already unified in args.json_out
     if args.cmd == "stamp":
-        cmd_stamp(args.paths, args.json_out)
+        # Hash mode
+        if getattr(args, "digest_hex", None):
+            if args.paths:
+                print("error: --hash cannot be combined with file paths", file=sys.stderr)
+                return EXIT_ERR
+            cmd_stamp_hash(args.digest_hex, args.out, args.json_out, getattr(args, "upgrade", False))
+            return EXIT_OK
+        if not args.paths:
+            print("error: provide at least one file path OR --hash <digest>", file=sys.stderr)
+            return EXIT_ERR
+        cmd_stamp_paths(args.paths, args.json_out)
         return EXIT_OK
     if args.cmd == "verify":
         cmd_verify(args.receipt, args.json_out)

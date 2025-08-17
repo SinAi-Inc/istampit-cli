@@ -46,9 +46,27 @@ istampit upgrade path/to/file.pdf.ots    # rewrites upgraded proof
 
 # Inspect a receipt
 istampit info path/to/file.pdf.ots       # shows operations/attestations
+
+# Stamp a precomputed SHA-256 digest (detached, no file upload)
+istampit stamp --hash 05c4f616a8e5310d19d938cfd769864d7f4ccdc2ca8b479b10af83564b097af9 \
+	--out 05c4f616a8e5310d19d938cfd769864d7f4ccdc2ca8b479b10af83564b097af9.ots
 ```
 
 Add `--json` to any command for machine‑readable output.
+
+### JSON output (hash mode)
+
+When using `--json` with `stamp --hash` the tool prints:
+
+```json
+{
+	"receipts": ["<output-path>"],
+	"hash": "<sha256-hex>",
+	"upgraded": true | false
+}
+```
+
+`upgraded` is `true` only if `--upgrade` was requested and at least one calendar attestation was successfully applied immediately.
 
 ---
 
