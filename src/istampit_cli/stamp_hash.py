@@ -26,8 +26,14 @@ def _parse_digest_hex(h: str) -> bytes:
 def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgrade: bool = False) -> tuple[str, bool]:
     digest = _parse_digest_hex(digest_hex)
 
-    # Build Timestamp over digest bytes then wrap in DetachedTimestampFile with OpSHA256
+    # Build Timestamp over digest bytes then wrap in DetachedTimestampFile with OpSHA256.
+    # Add a dummy self-hash op so the detached timestamp isn't considered "empty" by
+    # serialization rules in some OpenTimestamps versions.
     ts = Timestamp(digest)
+    try:  # defensive: older lib versions may differ
+        ts.ops[OpSHA256()] = Timestamp(digest)
+    except (KeyError, AttributeError, TypeError):  # pragma: no cover - continue without dummy op
+        pass
     dtf = DetachedTimestampFile(OpSHA256(), ts)
 
     out = out_path or f"{digest_hex}.ots"
