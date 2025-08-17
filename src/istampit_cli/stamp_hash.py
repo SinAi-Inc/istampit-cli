@@ -27,40 +27,29 @@ def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgr
     digest = _parse_digest_hex(digest_hex)
 
     # Construct a single root timestamp over the digest and attach a placeholder attestation
-    # to satisfy serializer requirements (must have at least one attestation or op). We avoid
-    # creating nested child timestamps to keep the detached structure minimal and stable.
+    # to satisfy serializer requirements (must have at least one attestation or op). Simplicity
+    # over cleverness: define a minimal private attestation class.
     root_ts = Timestamp(digest)
-    added_attestation = False
-    try:  # prefer PendingAttestation if available
-        from opentimestamps.core.attestations import PendingAttestation  # type: ignore
-        try:
-            try:
-                root_ts.attestations.add(PendingAttestation(b"placeholder"))  # type: ignore[arg-type]
-            except (TypeError, ValueError):
-                root_ts.attestations.add(PendingAttestation("placeholder"))  # type: ignore[arg-type]
-            added_attestation = True
-        except (TypeError, ValueError):
-            pass
-    except ImportError:
-        try:
-            from opentimestamps.core.timestamp import TimeAttestation  # type: ignore
+    try:  # pragma: no cover - defensive; rely on public TimeAttestation base
+        from opentimestamps.core.timestamp import TimeAttestation  # type: ignore
 
-            class _PlaceholderAttestation(TimeAttestation):  # type: ignore
-                TAG = b"PLHOLDER"
-                def _serialize_payload(self, ctx):  # type: ignore[override]
-                    return None
+        class _PlaceholderAttestation(TimeAttestation):  # type: ignore
+            TAG = b"PLHOLDER"  # 8 bytes
+            def _serialize_payload(self, ctx):  # type: ignore[override]
+                return None
+
+        try:
+            root_ts.attestations.add(_PlaceholderAttestation())
+        except (TypeError, ValueError):
+            # Fallback: if add fails, add a self-op so timestamp not empty
             try:
-                root_ts.attestations.add(_PlaceholderAttestation())
-                added_attestation = True
-            except (TypeError, ValueError):
+                root_ts.ops[OpSHA256()] = Timestamp(digest)
+            except (KeyError, TypeError, ValueError):
                 pass
-        except (ImportError, AttributeError):
-            pass
-    # As an ultra-fallback (should not be necessary), if we failed to add an attestation, add a self-op.
-    if not added_attestation:
+    except (ImportError, AttributeError):  # extremely unlikely; fallback to self-op
         try:
             root_ts.ops[OpSHA256()] = Timestamp(digest)
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError):  # pragma: no cover
             pass
 
     dtf = DetachedTimestampFile(OpSHA256(), root_ts)
