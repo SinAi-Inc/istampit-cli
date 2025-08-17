@@ -26,15 +26,48 @@ def _parse_digest_hex(h: str) -> bytes:
 def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgrade: bool = False) -> tuple[str, bool]:
     digest = _parse_digest_hex(digest_hex)
 
-    # Build Timestamp over digest bytes then wrap in DetachedTimestampFile with OpSHA256.
-    # Add a dummy self-hash op so the detached timestamp isn't considered "empty" by
-    # serialization rules in some OpenTimestamps versions.
-    ts = Timestamp(digest)
-    try:  # defensive: older lib versions may differ
-        ts.ops[OpSHA256()] = Timestamp(digest)
-    except (KeyError, AttributeError, TypeError):  # pragma: no cover - continue without dummy op
+    # Build a Timestamp over the digest bytes; attach a child timestamp for the OpSHA256
+    # that includes at least one attestation (placeholder) so neither node is "empty".
+    # This avoids ValueError("An empty timestamp can't be serialized") raised by
+    # opentimestamps when both attestations and ops are absent.
+    root_ts = Timestamp(digest)
+    child_ts = Timestamp(digest)
+    # Try preferred: PendingAttestation (if library provides it in newer versions)
+    try:  # pragma: no cover - availability depends on library version
+        from opentimestamps.core.attestations import PendingAttestation  # type: ignore
+
+        try:
+            # Some versions accept bytes, others str; attempt both.
+            try:  # first try bytes
+                child_ts.attestations.add(PendingAttestation(b"placeholder"))  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                child_ts.attestations.add(PendingAttestation("placeholder"))  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            pass
+    except ImportError:  # Fallback: define a minimal private attestation subclass
+        try:  # pragma: no cover
+            from opentimestamps.core.timestamp import TimeAttestation  # type: ignore
+
+            class _PlaceholderAttestation(TimeAttestation):  # type: ignore
+                TAG = b"PLHOLDER"  # 8-byte tag as required; private placeholder
+
+                def _serialize_payload(self, ctx):  # type: ignore[override]
+                    # Intentionally empty payload
+                    return None
+
+            try:  # attempt placeholder attestation
+                child_ts.attestations.add(_PlaceholderAttestation())
+            except (TypeError, ValueError):
+                pass
+        except (ImportError, AttributeError):
+            pass
+
+    try:  # attach op mapping
+        root_ts.ops[OpSHA256()] = child_ts
+    except (KeyError, TypeError, ValueError):  # pragma: no cover - conservative
         pass
-    dtf = DetachedTimestampFile(OpSHA256(), ts)
+
+    dtf = DetachedTimestampFile(OpSHA256(), root_ts)
 
     out = out_path or f"{digest_hex}.ots"
     with open(out, "wb") as f:
