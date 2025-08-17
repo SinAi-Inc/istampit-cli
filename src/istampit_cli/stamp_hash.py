@@ -26,46 +26,42 @@ def _parse_digest_hex(h: str) -> bytes:
 def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgrade: bool = False) -> tuple[str, bool]:
     digest = _parse_digest_hex(digest_hex)
 
-    # Build a Timestamp over the digest bytes; attach a child timestamp for the OpSHA256
-    # that includes at least one attestation (placeholder) so neither node is "empty".
-    # This avoids ValueError("An empty timestamp can't be serialized") raised by
-    # opentimestamps when both attestations and ops are absent.
+    # Construct a single root timestamp over the digest and attach a placeholder attestation
+    # to satisfy serializer requirements (must have at least one attestation or op). We avoid
+    # creating nested child timestamps to keep the detached structure minimal and stable.
     root_ts = Timestamp(digest)
-    child_ts = Timestamp(digest)
-    # Try preferred: PendingAttestation (if library provides it in newer versions)
-    try:  # pragma: no cover - availability depends on library version
+    added_attestation = False
+    try:  # prefer PendingAttestation if available
         from opentimestamps.core.attestations import PendingAttestation  # type: ignore
-
         try:
-            # Some versions accept bytes, others str; attempt both.
-            try:  # first try bytes
-                child_ts.attestations.add(PendingAttestation(b"placeholder"))  # type: ignore[arg-type]
+            try:
+                root_ts.attestations.add(PendingAttestation(b"placeholder"))  # type: ignore[arg-type]
             except (TypeError, ValueError):
-                child_ts.attestations.add(PendingAttestation("placeholder"))  # type: ignore[arg-type]
+                root_ts.attestations.add(PendingAttestation("placeholder"))  # type: ignore[arg-type]
+            added_attestation = True
         except (TypeError, ValueError):
             pass
-    except ImportError:  # Fallback: define a minimal private attestation subclass
-        try:  # pragma: no cover
+    except ImportError:
+        try:
             from opentimestamps.core.timestamp import TimeAttestation  # type: ignore
 
             class _PlaceholderAttestation(TimeAttestation):  # type: ignore
-                TAG = b"PLHOLDER"  # 8-byte tag as required; private placeholder
-
+                TAG = b"PLHOLDER"
                 def _serialize_payload(self, ctx):  # type: ignore[override]
-                    # Intentionally empty payload
                     return None
-
-            try:  # attempt placeholder attestation
-                child_ts.attestations.add(_PlaceholderAttestation())
+            try:
+                root_ts.attestations.add(_PlaceholderAttestation())
+                added_attestation = True
             except (TypeError, ValueError):
                 pass
         except (ImportError, AttributeError):
             pass
-
-    try:  # attach op mapping
-        root_ts.ops[OpSHA256()] = child_ts
-    except (KeyError, TypeError, ValueError):  # pragma: no cover - conservative
-        pass
+    # As an ultra-fallback (should not be necessary), if we failed to add an attestation, add a self-op.
+    if not added_attestation:
+        try:
+            root_ts.ops[OpSHA256()] = Timestamp(digest)
+        except (KeyError, TypeError, ValueError):
+            pass
 
     dtf = DetachedTimestampFile(OpSHA256(), root_ts)
 
