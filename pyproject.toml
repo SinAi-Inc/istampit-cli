@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "istampit-cli"
-version = "1.0.5"
+version = "0.1.0"
 description = "iStampit CLI – Blockchain timestamp verification with OpenTimestamps"
 authors = [ { name = "SinAI Inc.", email = "pypi@eihdah.com" } ]
 license = {text = "MIT"}
