@@ -29,13 +29,13 @@ def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgr
     # Create a root timestamp and add a dummy operation to avoid empty serialization
     # Use a different hash for the child to make it non-circular
     root_ts = Timestamp(digest)
-    
+
     # Create a dummy operation with a different result to avoid circular reference
     # Use the SHA256 of the digest as a child timestamp
     import hashlib
     child_digest = hashlib.sha256(digest).digest()
     child_ts = Timestamp(child_digest)
-    
+
     # Add a minimal attestation to the child to make it serializable
     try:
         from opentimestamps.core.notary import PendingAttestation
@@ -50,7 +50,7 @@ def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgr
             child_ts.ops[OpSHA256()] = grandchild_ts
         except (ImportError, TypeError, ValueError):
             pass
-    
+
     # Connect the root to the child
     root_ts.ops[OpSHA256()] = child_ts
 

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: istampit-cli
-Version: 1.0.2
+Version: 1.0.4
 Summary: iStampit CLI – Blockchain timestamp verification with OpenTimestamps
 Author-email: "SinAI Inc." <pypi@eihdah.com>
 License: MIT
@@ -35,7 +35,6 @@ Lightweight CLI around the official [OpenTimestamps](https://opentimestamps.org)
 * ✅ Trustless & permanent — proofs anchor into Bitcoin
 * ✅ Works offline — create receipts without network
 * ✅ `--json` output for automation & CI
-* 🧪 Detached hash stamping (`stamp --hash <sha256>`) experimental in 1.0.2 – finalization pending API probe
 
 ---
 
@@ -70,6 +69,20 @@ istampit stamp --hash 05c4f616a8e5310d19d938cfd769864d7f4ccdc2ca8b479b10af83564b
 ```
 
 Add `--json` to any command for machine‑readable output.
+
+### JSON output (hash mode)
+
+When using `--json` with `stamp --hash` the tool prints:
+
+```json
+{
+	"receipts": ["<output-path>"],
+	"hash": "<sha256-hex>",
+	"upgraded": true | false
+}
+```
+
+`upgraded` is `true` only if `--upgrade` was requested and at least one calendar attestation was successfully applied immediately.
 
 ---
 
