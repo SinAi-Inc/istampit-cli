@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import importlib.metadata
 import hashlib
+import importlib.metadata
 import json
 import re
 import shutil
@@ -63,7 +63,10 @@ def cmd_stamp_hash(digest_hex: str, out_path: str | None, json_out: bool, do_upg
     Produces a receipt whose commitment matches the provided digest, allowing
     later verification against the original file whose sha256 equals digest_hex.
     """
-    from .stamp_hash import stamp_from_hash_hex, HashFormatError  # local import to avoid import cost if unused
+    from .stamp_hash import (  # local import to avoid import cost if unused
+        HashFormatError,
+        stamp_from_hash_hex,
+    )
 
     try:
         receipt_path, upgraded = stamp_from_hash_hex(digest_hex, out_path, do_upgrade)
@@ -74,7 +77,11 @@ def cmd_stamp_hash(digest_hex: str, out_path: str | None, json_out: bool, do_upg
         print(f"error: {e}", file=sys.stderr)
         sys.exit(EXIT_ERR)
     if json_out:
-        print(json.dumps({"receipts": [receipt_path], "hash": digest_hex, "upgraded": upgraded}, indent=2))
+        print(json.dumps({
+            "receipts": [receipt_path],
+            "hash": digest_hex,
+            "upgraded": upgraded
+        }, indent=2))
     else:
         print(receipt_path)
 
@@ -249,13 +256,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    sp = sub.add_parser("stamp", help="Stamp file(s) OR a precomputed SHA-256 digest to create .ots receipts")
+    sp = sub.add_parser(
+        "stamp",
+        help="Stamp file(s) OR a precomputed SHA-256 digest to create .ots receipts"
+    )
     # Mutually exclusive: either positional file paths OR --hash
     sp.add_argument("paths", nargs="*", help="File paths to stamp")
     mx = sp.add_mutually_exclusive_group()
     mx.add_argument("--hash", dest="digest_hex", help="SHA-256 hex digest to stamp (detached)")
-    sp.add_argument("--out", dest="out", help="Output .ots path when using --hash (defaults to <hash>.ots)")
-    sp.add_argument("--upgrade", action="store_true", dest="upgrade", help="Attempt immediate upgrade (calendar attestations) after stamping")
+    sp.add_argument(
+        "--out",
+        dest="out",
+        help="Output .ots path when using --hash (defaults to <hash>.ots)"
+    )
+    sp.add_argument(
+        "--upgrade",
+        action="store_true",
+        dest="upgrade",
+        help="Attempt immediate upgrade (calendar attestations) after stamping"
+    )
     sp.add_argument("--json", action="store_true", dest="json_out", help="JSON output")
 
     sp = sub.add_parser("verify", help="Verify a .ots receipt")
@@ -287,7 +306,12 @@ def main(argv: list[str] | None = None) -> int:
             if args.paths:
                 print("error: --hash cannot be combined with file paths", file=sys.stderr)
                 return EXIT_ERR
-            cmd_stamp_hash(args.digest_hex, args.out, args.json_out, getattr(args, "upgrade", False))
+            cmd_stamp_hash(
+                args.digest_hex,
+                args.out,
+                args.json_out,
+                getattr(args, "upgrade", False)
+            )
             return EXIT_OK
         if not args.paths:
             print("error: provide at least one file path OR --hash <digest>", file=sys.stderr)

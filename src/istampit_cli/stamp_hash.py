@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import binascii
-from typing import Optional
 import subprocess
 
 from opentimestamps.core.op import OpSHA256  # type: ignore
-from opentimestamps.core.timestamp import DetachedTimestampFile, Timestamp  # type: ignore
 from opentimestamps.core.serialize import StreamSerializationContext  # type: ignore
+from opentimestamps.core.timestamp import DetachedTimestampFile, Timestamp  # type: ignore
 
 
 class HashFormatError(ValueError):
@@ -23,7 +22,11 @@ def _parse_digest_hex(h: str) -> bytes:
         raise HashFormatError("invalid hex") from e
 
 
-def stamp_from_hash_hex(digest_hex: str, out_path: Optional[str] = None, do_upgrade: bool = False) -> tuple[str, bool]:
+def stamp_from_hash_hex(
+    digest_hex: str,
+    out_path: str | None = None,
+    do_upgrade: bool = False
+) -> tuple[str, bool]:
     digest = _parse_digest_hex(digest_hex)
 
     # Create a root timestamp and add a dummy operation to avoid empty serialization
